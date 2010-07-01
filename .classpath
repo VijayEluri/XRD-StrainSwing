@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="Process_XRD.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Peakaboo_Drawing"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Peakaboo_SwingGUI"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Peakaboo_UIController"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
