@@ -1,18 +1,11 @@
+package XRDStrainViewer.swing.viewer;
+
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -20,46 +13,31 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToolBar;
-import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import ca.sciencestudio.process.xrd.controllers.ProcessXRDResults_Controller;
-import ca.sciencestudio.process.xrd.controllers.ProcessXRDResults_ImageDataController;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Listener;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Map;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Pixel;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_StrainMap;
-import fava.FList;
-import fava.Fn;
-import fava.FunctionEach;
-import fava.FunctionMap;
-import fava.Functions;
+import XRDStrainViewer.swing.XRDMapFrame;
+import XRDStrainViewer.swing.controller.ControllerMessage;
+import XRDStrainViewer.swing.controller.XRDMapController;
 
-import peakaboo.datatypes.Coord;
-import peakaboo.datatypes.Spectrum;
-import peakaboo.datatypes.eventful.PeakabooMessageListener;
-import peakaboo.datatypes.eventful.PeakabooSimpleListener;
-import peakaboo.drawing.DrawingRequest;
-import peakaboo.drawing.backends.DrawingSurfaceFactory;
-import peakaboo.drawing.backends.graphics2d.ImageBuffer;
-import peakaboo.drawing.common.Spectrums;
-import peakaboo.drawing.map.MapDrawing;
-import peakaboo.drawing.map.painters.MapPainter;
-import peakaboo.drawing.map.painters.MapTechniqueFactory;
-import peakaboo.drawing.map.painters.RasterColorMapPainter;
-import peakaboo.drawing.map.painters.axis.SpectrumCoordsAxisPainter;
-import peakaboo.drawing.map.palettes.AbstractPalette;
-import peakaboo.drawing.map.palettes.ThermalScalePalette;
-import peakaboo.drawing.painters.PainterData;
-import peakaboo.drawing.painters.axis.AxisPainter;
-import peakaboo.ui.swing.icons.IconSize;
-import peakaboo.ui.swing.plotting.PeakabooContainer;
-import peakaboo.ui.swing.widgets.ImageButton;
-import peakaboo.ui.swing.widgets.ImageButton.Layout;
-import peakaboo.ui.swing.widgets.pictures.SavePicture;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Map;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
+import eventful.EventfulEnumListener;
+import fava.Fn;
+import fava.Functions;
+import fava.lists.FList;
+import fava.signatures.FunctionEach;
+import fava.signatures.FunctionMap;
+
+import scidraw.swing.GraphicsPanel;
+import scidraw.swing.SavePicture;
+import swidget.containers.SwidgetContainer;
+import swidget.icons.IconFactory;
+import swidget.icons.IconSize;
+import swidget.widgets.ImageButton;
+import swidget.widgets.ToolbarImageButton;
+import swidget.widgets.ImageButton.Layout;
 
 
 
@@ -68,10 +46,10 @@ public class XRDMapViewer extends JPanel
 
 	//map drawing data
 
-	private JPanel							targetPanel;
+	private GraphicsPanel					targetPanel;
 	
 	private XRDMapController				controller;
-	private PeakabooContainer				container;
+	private SwidgetContainer				container;
 	
 	
 	//widgets and the listeners which will have to be disabled when handling updates
@@ -80,14 +58,13 @@ public class XRDMapViewer extends JPanel
 
 
 
-	public XRDMapViewer(ProcessXRDResults_ProjectData data, PeakabooContainer container)
+	public XRDMapViewer(ProcessXRDResults_ProjectData data, SwidgetContainer container)
 	{
-		controller = new XRDMapController();
-		controller.model = data;
+		controller = new XRDMapController(data);
 		if (data != null)
 		{
 			controller.dataLoaded = true;
-			controller.setMap(controller.model.maps[0]);
+			controller.setMap(controller.getModel().maps[0]);
 		}
 		
 		this.container = container;
@@ -107,17 +84,8 @@ public class XRDMapViewer extends JPanel
 		setLayout(new BorderLayout());
 		
 		
-		targetPanel = new JPanel() {
-
-			public void paintComponent(Graphics g)
-			{
-				g.setColor(Color.white);
-				g.fillRect(0, 0, getWidth(), getHeight());
-				controller.setDimensions(new Coord<Integer>(getWidth(), getHeight()));
-				controller.draw(g);
-			}
-
-		};
+		targetPanel = new MapGraphicsPanel(controller);
+		
 		
 		add(targetPanel, BorderLayout.CENTER);
 		
@@ -128,34 +96,26 @@ public class XRDMapViewer extends JPanel
 		buildMenu();
 		
 		
-		controller.addListener(new PeakabooMessageListener() {
+		controller.addListener(new EventfulEnumListener<ControllerMessage>() {
 			
-			public void change()
-			{
-				updateUI();
-			}
-
-			public void change(Object message)
+			public void change(ControllerMessage message)
 			{
 				
-				if (message instanceof XRDMapController.Message)
+				switch (message)
 				{
-					
-					XRDMapController.Message m = (XRDMapController.Message)message;
-					switch (m)
-					{
-						case NEWMAP:
-							break;
-						case NEWDATA:
-							
-							buildMenu();
-							
-							break;
-					}
-					
-					updateUI();
-					
+					case NEWMAP:
+						break;
+					case NEWDATA:
+						
+						buildMenu();
+						
+						break;
+					case NORMAL:
+						break;
 				}
+				
+				updateUI();
+				
 			}
 			
 			private void updateUI()
@@ -177,14 +137,17 @@ public class XRDMapViewer extends JPanel
 	public JToolBar buildToolbar()
 	{
 		JToolBar toolbar = new JToolBar();
-		ImageButton newWindow = new ImageButton("new-window", "New Window", Layout.IMAGE, IconSize.TOOLBAR_SMALL);
-		ImageButton picture = new ImageButton("picture", "Save Picture", Layout.IMAGE, IconSize.TOOLBAR_SMALL);
+		toolbar.setFloatable(false);
+		
+		ImageButton newWindow = new ToolbarImageButton("window-new", "New Window", "Opens a new window to view data in", false);
+		ImageButton openData = new ToolbarImageButton("document-open", "Open Data", "Opens a new data set for viewing", false);
+		ImageButton picture = new ToolbarImageButton("picture", "Save Picture", "Save the currently displayed data as a picture", true);
 		
 		newWindow.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e)
 			{
-				new XRDMapFrame(controller.model);
+				actionNewWindow();
 			}
 		});
 		
@@ -192,11 +155,20 @@ public class XRDMapViewer extends JPanel
 			
 			public void actionPerformed(ActionEvent e)
 			{
-				if (controller.getMap() != null) new SavePicture(container, controller, "");
+				actionSavePicture();
+			}
+		});
+		
+		openData.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e)
+			{
+				actionOpenData();
 			}
 		});
 		
 		if (! container.isApplet()) toolbar.add(newWindow);
+		toolbar.add(openData);
 		toolbar.add(picture);
 		
 		return toolbar;
@@ -249,15 +221,38 @@ public class XRDMapViewer extends JPanel
 		final JMenu mapsmenu = new JMenu("Maps");
 
 
-		JMenuItem open = new JMenuItem("Open Data...");
+		JMenuItem newWindow = new JMenuItem("New Window", IconFactory.getMenuIcon("window-new"));
+		newWindow.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e)
+			{
+				actionNewWindow();
+			}
+		});
+		
+		filemenu.add(newWindow);
+		
+		filemenu.addSeparator();
+		
+		JMenuItem open = new JMenuItem("Open Data...", IconFactory.getMenuIcon("document-open"));
 		open.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e)
 			{
-				controller.loadData("/home/nathaniel/Projects/XRDStrainViewer/Gaussian");
+				actionOpenData();
 			}
 		});
 		filemenu.add(open);
+		
+		JMenuItem save = new JMenuItem("Save Picture", IconFactory.getMenuIcon("picture"));
+		save.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e)
+			{
+				actionSavePicture();
+			}
+		});
+		filemenu.add(save);
 		
 		filemenu.addSeparator();
 
@@ -271,7 +266,7 @@ public class XRDMapViewer extends JPanel
 		});
 		filemenu.add(close);
 		
-		JMenuItem exit = new JMenuItem("Exit");
+		JMenuItem exit = new JMenuItem("Exit", IconFactory.getMenuIcon("window-close"));
 		exit.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e)
@@ -285,32 +280,33 @@ public class XRDMapViewer extends JPanel
 		menubar.add(filemenu);
 		
 		
-		if (controller.model != null)
+		if (controller.getModel() != null)
 		{
 					
 			//get the maps as a list
-			FList<ProcessXRDResults_Map> maps = Fn.map(controller.model.maps, Functions.<ProcessXRDResults_Map> id());
+			FList<ProcessXRDResults_Map> maps = Fn.map(controller.getModel().maps, Functions.<ProcessXRDResults_Map> id());
 
 			//sort the maps by string name field
 			Fn.sortBy(maps, 
 				
-			//simple string comparitor
-			new Comparator<String>() {
-				
-				public int compare(String o1, String o2)
-				{
-					return o1.compareTo(o2);
+				//simple string comparitor
+				new Comparator<String>() {
+					
+					public int compare(String o1, String o2)
+					{
+						return o1.compareTo(o2);
+					}
+				},
+	
+				//map the map to the map name
+				new FunctionMap<ProcessXRDResults_Map, String>() {
+	
+					public String f(ProcessXRDResults_Map map)
+					{
+						return map.name;
+					}
 				}
-			},
-
-			//map the map to the map name
-			new FunctionMap<ProcessXRDResults_Map, String>() {
-
-				public String f(ProcessXRDResults_Map map)
-				{
-					return map.name;
-				}
-			});
+			);
 
 			
 			//for each map, create an entry in the menu
@@ -343,9 +339,9 @@ public class XRDMapViewer extends JPanel
 	{
 		String title;
 		title = "XRD Crystal Viewer";
-		if (controller.model != null)
+		if (controller.getModel() != null)
 		{
-			title += ": " + controller.model.filePrefix;
+			title += ": " + controller.getModel().filePrefix;
 		}
 		
 		if (controller.getMap() != null)
@@ -359,6 +355,33 @@ public class XRDMapViewer extends JPanel
 
 
 
+	
+	
+	
+	
+	
+	
+	
+	public void actionNewWindow()
+	{
+		new XRDMapFrame(controller.getModel());
+	}
+	
+	public void actionSavePicture()
+	{
+		if (controller.getMap() != null) new SavePicture(container, targetPanel, "");
+	}
+	
+	public void actionOpenData()
+	{
+		controller.loadData("/home/nathaniel/Projects/XRDStrainViewer/Gaussian");
+	}
+	
+	
+	
+	
+	
+	
 	public static void main(String args[])
 	{
 		new XRDMapFrame();

@@ -1,3 +1,5 @@
+package XRDStrainViewer.swing;
+
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Panel;
@@ -7,13 +9,17 @@ import java.awt.event.WindowListener;
 
 import javax.swing.JFrame;
 
+import XRDStrainViewer.swing.viewer.WindowCounter;
+import XRDStrainViewer.swing.viewer.XRDMapViewer;
+
+import swidget.containers.SwidgetContainer;
+
 import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
 
-import peakaboo.ui.swing.plotting.PeakabooContainer;
 
 
 
-public class XRDMapFrame extends JFrame implements PeakabooContainer
+public class XRDMapFrame extends JFrame implements SwidgetContainer
 {
 
 	

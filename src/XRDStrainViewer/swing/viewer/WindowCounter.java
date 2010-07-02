@@ -1,4 +1,4 @@
-
+package XRDStrainViewer.swing.viewer;
 
 public class WindowCounter
 {
