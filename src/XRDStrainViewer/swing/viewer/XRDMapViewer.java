@@ -35,6 +35,7 @@ import scidraw.swing.SavePicture;
 import swidget.containers.SwidgetContainer;
 import swidget.icons.IconFactory;
 import swidget.icons.IconSize;
+import swidget.icons.StockIcon;
 import swidget.widgets.ImageButton;
 import swidget.widgets.ToolbarImageButton;
 import swidget.widgets.ImageButton.Layout;
@@ -139,9 +140,9 @@ public class XRDMapViewer extends JPanel
 		JToolBar toolbar = new JToolBar();
 		toolbar.setFloatable(false);
 		
-		ImageButton newWindow = new ToolbarImageButton("window-new", "New Window", "Opens a new window to view data in", false);
-		ImageButton openData = new ToolbarImageButton("document-open", "Open Data", "Opens a new data set for viewing", false);
-		ImageButton picture = new ToolbarImageButton("picture", "Save Picture", "Save the currently displayed data as a picture", true);
+		ImageButton newWindow = new ToolbarImageButton(StockIcon.WINDOW_NEW, "New Window", "Opens a new window to view data in", false);
+		ImageButton openData = new ToolbarImageButton(StockIcon.DOCUMENT_OPEN, "Open Data", "Opens a new data set for viewing", false);
+		ImageButton picture = new ToolbarImageButton(StockIcon.DEVICE_CAMERA, "Save Picture", "Save the currently displayed data as a picture", true);
 		
 		newWindow.addActionListener(new ActionListener() {
 			
@@ -221,7 +222,7 @@ public class XRDMapViewer extends JPanel
 		final JMenu mapsmenu = new JMenu("Maps");
 
 
-		JMenuItem newWindow = new JMenuItem("New Window", IconFactory.getMenuIcon("window-new"));
+		JMenuItem newWindow = new JMenuItem("New Window", IconFactory.getMenuIcon(StockIcon.WINDOW_NEW));
 		newWindow.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e)
@@ -234,7 +235,7 @@ public class XRDMapViewer extends JPanel
 		
 		filemenu.addSeparator();
 		
-		JMenuItem open = new JMenuItem("Open Data...", IconFactory.getMenuIcon("document-open"));
+		JMenuItem open = new JMenuItem("Open Data...", IconFactory.getMenuIcon(StockIcon.DOCUMENT_OPEN));
 		open.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e)
@@ -244,7 +245,7 @@ public class XRDMapViewer extends JPanel
 		});
 		filemenu.add(open);
 		
-		JMenuItem save = new JMenuItem("Save Picture", IconFactory.getMenuIcon("picture"));
+		JMenuItem save = new JMenuItem("Save Picture", IconFactory.getMenuIcon(StockIcon.DEVICE_CAMERA));
 		save.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e)
@@ -266,7 +267,7 @@ public class XRDMapViewer extends JPanel
 		});
 		filemenu.add(close);
 		
-		JMenuItem exit = new JMenuItem("Exit", IconFactory.getMenuIcon("window-close"));
+		JMenuItem exit = new JMenuItem("Exit", IconFactory.getMenuIcon(StockIcon.WINDOW_CLOSE));
 		exit.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e)
@@ -382,10 +383,7 @@ public class XRDMapViewer extends JPanel
 	
 	
 	
-	public static void main(String args[])
-	{
-		new XRDMapFrame();
-	}
+
 
 
 }

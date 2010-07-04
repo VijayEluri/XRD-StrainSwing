@@ -13,15 +13,25 @@ import XRDStrainViewer.swing.viewer.WindowCounter;
 import XRDStrainViewer.swing.viewer.XRDMapViewer;
 
 import swidget.containers.SwidgetContainer;
+import swidget.containers.SwidgetFrame;
 
 import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
 
 
 
 
-public class XRDMapFrame extends JFrame implements SwidgetContainer
+public class XRDMapFrame extends SwidgetFrame
 {
 
+	public static void main(String args[])
+	{
+		new XRDMapFrame();	
+	}
+	
+	
+	
+	
+	
 	
 	public XRDMapFrame()
 	{
@@ -73,32 +83,6 @@ public class XRDMapFrame extends JFrame implements SwidgetContainer
 		pack();
 		setVisible(true);
 		
-	}
-
-	public Component getComponent()
-	{
-		return this;
-	}
-
-	public Panel getPanel()
-	{
-		return null;
-	}
-
-	public Window getWindow()
-	{
-		return this;
-	}
-
-	public boolean isApplet()
-	{
-		return false;
-	}
-
-	public void close()
-	{
-		super.dispose();
-		super.setVisible(false);
-	}
+	}	
 	
 }
