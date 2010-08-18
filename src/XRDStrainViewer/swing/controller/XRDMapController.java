@@ -21,13 +21,14 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 	private ProcessXRDResults_ProjectData	model;
 	private ProcessXRDResults_Map			map;
 	public DrawingRequest					dr;
-	public boolean							dataLoaded	= false;
+	private boolean							dataLoaded	= false;
 	
 	public XRDMapController(ProcessXRDResults_ProjectData model)
 	{	
 		dr = new DrawingRequest();
 		dr.maxYIntensity = 1;
 		this.model = model;
+		if (model != null) dataLoaded = true;
 	}
 
 	public XRDMapController()
@@ -87,6 +88,11 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 		
 		
 
+	}
+	
+	public boolean hasData()
+	{
+		return dataLoaded;
 	}
 
 }

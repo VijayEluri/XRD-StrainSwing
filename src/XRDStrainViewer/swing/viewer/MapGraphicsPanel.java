@@ -48,7 +48,7 @@ public class MapGraphicsPanel extends GraphicsPanel
 		ProcessXRDResults_Map map = controller.getMap();
 		DrawingRequest dr = controller.dr;
 		
-		if (!controller.dataLoaded || map == null) return;
+		if (!controller.hasData() || map == null) return;
 		
 		//set the drawing requests dimensions for the data and the screen
 		dr.imageWidth = getWidth();
@@ -62,6 +62,8 @@ public class MapGraphicsPanel extends GraphicsPanel
 		List<AbstractPalette> palettes = new LinkedList<AbstractPalette>();
 		palettes.add(new ThermalScalePalette(false, true));
 
+		
+		
 		AxisPainter axis = new SpectrumCoordsAxisPainter(
 				true,
 				new Coord<Number>(1, 1),
@@ -78,13 +80,17 @@ public class MapGraphicsPanel extends GraphicsPanel
 				true
 				);
 
-		drawing.setAxisPainters(axis);
+		if (controller.getMap() instanceof ProcessXRDResults_StrainMap) {
+			drawing.setAxisPainters(axis);
+		} else {
+			drawing.clearAxisPainters();
+		}
 		
 		dr.drawToVectorSurface = vector;
 
 		//set the painter and drawings data, and paint the screen
 		drawing.needsMapRepaint();
-		drawing.setDR(dr);
+		drawing.setDrawingRequest(dr);
 		painter.setPixels(colors);
 		drawing.setContext(backend);
 		drawing.draw();
@@ -94,14 +100,14 @@ public class MapGraphicsPanel extends GraphicsPanel
 	@Override
 	public float getUsedHeight()
 	{
-		return controller.dr.imageHeight;
+		return drawing.calcTotalSize().y;		
 	}
 
 
 	@Override
 	public float getUsedWidth()
 	{
-		return controller.dr.imageWidth;
+		return drawing.calcTotalSize().x;
 	}
 
 	private List<Color> getColorMapFromPixelMap(ProcessXRDResults_Map map, DrawingRequest dr)

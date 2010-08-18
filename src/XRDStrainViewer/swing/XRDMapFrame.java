@@ -2,6 +2,8 @@ package XRDStrainViewer.swing;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Window;
 import java.awt.event.WindowEvent;
@@ -12,26 +14,14 @@ import javax.swing.JFrame;
 import XRDStrainViewer.swing.viewer.WindowCounter;
 import XRDStrainViewer.swing.viewer.XRDMapViewer;
 
-import swidget.containers.SwidgetContainer;
-import swidget.containers.SwidgetFrame;
-
 import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
 
 
 
 
-public class XRDMapFrame extends SwidgetFrame
+public class XRDMapFrame extends JFrame
 {
 
-	public static void main(String args[])
-	{
-		new XRDMapFrame();	
-	}
-	
-	
-	
-	
-	
 	
 	public XRDMapFrame()
 	{
@@ -63,15 +53,17 @@ public class XRDMapFrame extends SwidgetFrame
 		
 			public void windowClosing(WindowEvent e)
 			{
-				XRDMapFrame.this.close();
-			}
-		
-			public void windowClosed(WindowEvent e)
-			{
+				XRDMapFrame.this.setVisible(false);
+				XRDMapFrame.this.dispose();
 				if (WindowCounter.decreaseWindowCount() == 0)
 				{
 					System.exit(0);
 				}
+			}
+		
+			public void windowClosed(WindowEvent e)
+			{
+
 			}
 		
 			public void windowActivated(WindowEvent e){}
@@ -83,6 +75,14 @@ public class XRDMapFrame extends SwidgetFrame
 		pack();
 		setVisible(true);
 		
-	}	
+	}
+
+	
+	public void close()
+	{
+		XRDMapFrame.this.setVisible(false);
+		XRDMapFrame.this.dispose();
+	}
+	
 	
 }
