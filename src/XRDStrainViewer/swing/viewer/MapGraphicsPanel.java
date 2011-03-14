@@ -5,11 +5,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Map;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Pixel;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_StrainMap;
+
 import XRDStrainViewer.swing.controller.XRDMapController;
 
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Map;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Pixel;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_StrainMap;
 
 import scidraw.drawing.DrawingRequest;
 import scidraw.drawing.backends.Surface;
@@ -45,7 +46,7 @@ public class MapGraphicsPanel extends GraphicsPanel
 	@Override
 	protected void drawGraphics(Surface backend, boolean vector)
 	{
-		ProcessXRDResults_Map map = controller.getMap();
+		ProcessXRD_Map map = controller.getMap();
 		DrawingRequest dr = controller.dr;
 		
 		if (!controller.hasData() || map == null) return;
@@ -80,7 +81,7 @@ public class MapGraphicsPanel extends GraphicsPanel
 				true
 				);
 
-		if (controller.getMap() instanceof ProcessXRDResults_StrainMap) {
+		if (controller.getMap() instanceof ProcessXRD_StrainMap) {
 			drawing.setAxisPainters(axis);
 		} else {
 			drawing.clearAxisPainters();
@@ -110,7 +111,7 @@ public class MapGraphicsPanel extends GraphicsPanel
 		return drawing.calcTotalSize().x;
 	}
 
-	private List<Color> getColorMapFromPixelMap(ProcessXRDResults_Map map, DrawingRequest dr)
+	private List<Color> getColorMapFromPixelMap(ProcessXRD_Map map, DrawingRequest dr)
 	{
 		List<Color> colorMap = new ArrayList<Color>();
 
@@ -120,14 +121,16 @@ public class MapGraphicsPanel extends GraphicsPanel
 		}
 
 		Color c;
+		
+		int maxInd = Math.min(map.dataIndex, map.height * map.width);
 
-		if (map instanceof ProcessXRDResults_StrainMap)
+		if (map instanceof ProcessXRD_StrainMap)
 		{
-			((ProcessXRDResults_StrainMap) map).setSpectrumRange(dr.maxYIntensity);
+			((ProcessXRD_StrainMap) map).setSpectrumRange(0, dr.maxYIntensity);
 
-			for (int i = 0; i < map.height * map.width; i++)
+			for (int i = 0; i < maxInd; i++)
 			{
-				ProcessXRDResults_Pixel pixel = map.getPixel(i);
+				ProcessXRD_Pixel pixel = map.getPixel(i);
 				if (pixel == null) continue;
 				int index = pixel.x + (pixel.y * map.width);
 				c = new Color(pixel.r, pixel.g, pixel.b);
@@ -137,9 +140,9 @@ public class MapGraphicsPanel extends GraphicsPanel
 		}
 		else
 		{
-			for (int i = 0; i < map.height * map.width; i++)
+			for (int i = 0; i < maxInd; i++)
 			{
-				ProcessXRDResults_Pixel pixel = map.getPixel(i);
+				ProcessXRD_Pixel pixel = map.getPixel(i);
 				if (pixel == null) continue;
 				int index = pixel.x + (pixel.y * map.width);
 				c = new Color(pixel.r, pixel.g, pixel.b);

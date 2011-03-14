@@ -7,7 +7,10 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -26,12 +29,12 @@ import XRDStrainViewer.swing.XRDMapFrame;
 import XRDStrainViewer.swing.controller.ControllerMessage;
 import XRDStrainViewer.swing.controller.XRDMapController;
 
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Map;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Map;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_ProjectData;
 import eventful.EventfulEnumListener;
 import fava.Fn;
 import fava.Functions;
-import fava.lists.FList;
+import fava.functionable.FList;
 import fava.signatures.FnEach;
 import fava.signatures.FnMap;
 
@@ -63,7 +66,7 @@ public class XRDMapViewer extends JPanel
 	private ImageButton			savePictureButton;
 
 
-	public XRDMapViewer(ProcessXRDResults_ProjectData data, XRDMapFrame container)
+	public XRDMapViewer(ProcessXRD_ProjectData data, XRDMapFrame container)
 	{
 		controller = new XRDMapController(data);
 		if (data != null)
@@ -102,24 +105,34 @@ public class XRDMapViewer extends JPanel
 
 		controller.addListener(new EventfulEnumListener<ControllerMessage>() {
 
+			long firstUpdateTime = 0;
+			int updateCount = 0;
+			List<ControllerMessage> messages = new ArrayList<ControllerMessage>();
+			
 			public void change(ControllerMessage message)
 			{
 
-				switch (message)
+				updateCount++;
+				
+				if (message == ControllerMessage.NEWDATA) 
 				{
-					case NEWMAP:
-						break;
-					case NEWDATA:
-
+					if ( updateCount > 500 || firstUpdateTime < (System.currentTimeMillis() - 5000))
+					{
+						
 						buildMenu();
-
-						break;
-					case NORMAL:
-						break;
+						updateUI();
+						updateCount = 0;
+						firstUpdateTime = System.currentTimeMillis();
+						
+					}
+					
+				} else {
+					buildMenu();
+					updateUI();
 				}
-
-				updateUI();
-
+				
+				
+				
 			}
 
 
@@ -304,8 +317,8 @@ public class XRDMapViewer extends JPanel
 		{
 
 			//get the maps as a list
-			FList<ProcessXRDResults_Map> maps = Fn.map(controller.getModel().maps, Functions
-				.<ProcessXRDResults_Map> id());
+			FList<ProcessXRD_Map> maps = Fn.map(controller.getModel().maps, Functions
+				.<ProcessXRD_Map> id());
 
 			//sort the maps by string name field
 			Fn.sortBy(maps,
@@ -320,9 +333,9 @@ public class XRDMapViewer extends JPanel
 					},
 
 					//map the map to the map name
-					new FnMap<ProcessXRDResults_Map, String>() {
+					new FnMap<ProcessXRD_Map, String>() {
 
-						public String f(ProcessXRDResults_Map map)
+						public String f(ProcessXRD_Map map)
 					{
 						return map.name;
 					}
@@ -331,9 +344,9 @@ public class XRDMapViewer extends JPanel
 
 
 			//for each map, create an entry in the menu
-			maps.each(new FnEach<ProcessXRDResults_Map>() {
+			maps.each(new FnEach<ProcessXRD_Map>() {
 
-				public void f(final ProcessXRDResults_Map map)
+				public void f(final ProcessXRD_Map map)
 				{
 					JMenuItem item = new JMenuItem(map.name);
 					item.addActionListener(new ActionListener() {

@@ -1,15 +1,19 @@
 package XRDStrainViewer.swing.controller;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+
+import XRDStrainViewer.swing.FolderMonitorService;
 
 import scidraw.drawing.DrawingRequest;
 import scidraw.drawing.common.Spectrums;
 
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Listener;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_Map;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Map;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_ProjectData;
+import ca.sciencestudio.process.xrd.monitor.FolderMonitor;
 import eventful.EventfulEnum;
+import eventful.EventfulTypeListener;
 
 
 
@@ -18,12 +22,12 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 
 
 	
-	private ProcessXRDResults_ProjectData	model;
-	private ProcessXRDResults_Map			map;
-	public DrawingRequest					dr;
-	private boolean							dataLoaded	= false;
+	private ProcessXRD_ProjectData	model;
+	private ProcessXRD_Map			map;
+	public DrawingRequest			dr;
+	private boolean					dataLoaded	= false;
 	
-	public XRDMapController(ProcessXRDResults_ProjectData model)
+	public XRDMapController(ProcessXRD_ProjectData model)
 	{	
 		dr = new DrawingRequest();
 		dr.maxYIntensity = 1;
@@ -48,20 +52,20 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 	}
 	
 	
-	public void setMap(ProcessXRDResults_Map map)
+	public void setMap(ProcessXRD_Map map)
 	{
 		this.map = map;
 		updateListeners(ControllerMessage.NEWMAP);
 	}
 	
 	
-	public ProcessXRDResults_Map getMap()
+	public ProcessXRD_Map getMap()
 	{
 		return map;
 	}
 	
 	
-	public ProcessXRDResults_ProjectData getModel()
+	public ProcessXRD_ProjectData getModel()
 	{
 		return model;
 	}
@@ -72,20 +76,26 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 		
 		List<String> folders = new LinkedList<String>();
 		folders.add(folder);
+		
+		File dir = new File(folder);
+		
+		FolderMonitor fm = FolderMonitorService.getFolderMonitor();
+		
 
-		model = new ProcessXRDResults_ProjectData(folder, Spectrums.ThermalScale());
+		model = fm.requestProject(dir.getName(), dir.getParent(), false); 
+		model.setSpectrum(Spectrums.ThermalScale());	
+
 				
-		model.setListener(new ProcessXRDResults_Listener() {
+		model.addListener(new EventfulTypeListener<String>() {
 
-			public void change()
-			{
+			public void change(String message) {
 				dataLoaded = true;
 				map = model.maps[0];
 				updateListeners(ControllerMessage.NEWDATA);
-				
 			}
 		});
-		
+
+
 		
 
 	}

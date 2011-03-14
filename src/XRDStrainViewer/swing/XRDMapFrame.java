@@ -14,7 +14,7 @@ import javax.swing.JFrame;
 import XRDStrainViewer.swing.viewer.WindowCounter;
 import XRDStrainViewer.swing.viewer.XRDMapViewer;
 
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRDResults_ProjectData;
+import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_ProjectData;
 
 
 
@@ -28,12 +28,12 @@ public class XRDMapFrame extends JFrame
 		buildUI(null);
 	}
 	
-	public XRDMapFrame(ProcessXRDResults_ProjectData data)
+	public XRDMapFrame(ProcessXRD_ProjectData data)
 	{
 		buildUI(data);
 	}
 	
-	private void buildUI(ProcessXRDResults_ProjectData data)
+	private void buildUI(ProcessXRD_ProjectData data)
 	{
 		
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
