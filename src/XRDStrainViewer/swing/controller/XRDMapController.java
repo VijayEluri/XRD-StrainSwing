@@ -25,14 +25,12 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 	private ProcessXRD_ProjectData	model;
 	private ProcessXRD_Map			map;
 	public DrawingRequest			dr;
-	private boolean					dataLoaded	= false;
 	
 	public XRDMapController(ProcessXRD_ProjectData model)
 	{	
 		dr = new DrawingRequest();
 		dr.maxYIntensity = 1;
 		this.model = model;
-		if (model != null) dataLoaded = true;
 	}
 
 	public XRDMapController()
@@ -73,6 +71,8 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 	
 	public void loadData(String folder)
 	{
+		//clear out the old model data from the folder monitor
+		if (model != null) FolderMonitorService.getFolderMonitor().removeProject(model.projectName);
 		
 		List<String> folders = new LinkedList<String>();
 		folders.add(folder);
@@ -84,25 +84,26 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 
 		model = fm.requestProject(dir.getName(), dir.getParent(), false); 
 		model.setSpectrum(Spectrums.ThermalScale());	
-
-				
+		
+		
+		map = model.maps[0];
+		
 		model.addListener(new EventfulTypeListener<String>() {
 
 			public void change(String message) {
-				dataLoaded = true;
-				map = model.maps[0];
+				
 				updateListeners(ControllerMessage.NEWDATA);
 			}
 		});
 
-
+		updateListeners(ControllerMessage.NEWDATASET);
 		
 
 	}
 	
 	public boolean hasData()
 	{
-		return dataLoaded;
+		return (model != null);
 	}
 
 }

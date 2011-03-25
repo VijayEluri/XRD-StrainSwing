@@ -1,7 +1,5 @@
 package XRDStrainViewer.swing.viewer;
 
-
-
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -32,6 +30,7 @@ import XRDStrainViewer.swing.controller.XRDMapController;
 import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Map;
 import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_ProjectData;
 import eventful.EventfulEnumListener;
+import eventful.QueuedEventfulEnumListener;
 import fava.Fn;
 import fava.Functions;
 import fava.functionable.FList;
@@ -45,32 +44,26 @@ import swidget.icons.StockIcon;
 import swidget.widgets.ImageButton;
 import swidget.widgets.ToolbarImageButton;
 
+public class XRDMapViewer extends JPanel {
 
+	// map drawing data
 
-public class XRDMapViewer extends JPanel
-{
+	private GraphicsPanel targetPanel;
 
-	//map drawing data
+	private XRDMapController controller;
+	private XRDMapFrame container;
 
-	private GraphicsPanel		targetPanel;
+	// widgets and the listeners which will have to be disabled when handling
+	// updates
+	private JSpinner scaleMaxSpinner;
+	private ChangeListener scaleChange;
 
-	private XRDMapController	controller;
-	private XRDMapFrame			container;
+	// widgets
+	private ImageButton savePictureButton;
 
-
-	//widgets and the listeners which will have to be disabled when handling updates
-	private JSpinner			scaleSpinner;
-	private ChangeListener		scaleChange;
-
-	//widgets
-	private ImageButton			savePictureButton;
-
-
-	public XRDMapViewer(ProcessXRD_ProjectData data, XRDMapFrame container)
-	{
+	public XRDMapViewer(ProcessXRD_ProjectData data, XRDMapFrame container) {
 		controller = new XRDMapController(data);
-		if (data != null)
-		{
+		if (data != null) {
 			controller.setMap(controller.getModel().maps[0]);
 		}
 
@@ -81,7 +74,6 @@ public class XRDMapViewer extends JPanel
 		makeTitle();
 
 	}
-
 
 	private void buildUI()
 	{
@@ -102,99 +94,82 @@ public class XRDMapViewer extends JPanel
 
 		buildMenu();
 
+		
+		controller.addListener(new QueuedEventfulEnumListener<ControllerMessage>(1000) {
 
-		controller.addListener(new EventfulEnumListener<ControllerMessage>() {
-
-			long firstUpdateTime = 0;
-			int updateCount = 0;
-			List<ControllerMessage> messages = new ArrayList<ControllerMessage>();
-			
-			public void change(ControllerMessage message)
+			@Override
+			public void changes(List<ControllerMessage> messages) 
 			{
-
-				updateCount++;
 				
-				if (message == ControllerMessage.NEWDATA) 
+				boolean needsUIRebuild = false;
+								
+				for (ControllerMessage message : messages)
 				{
-					if ( updateCount > 500 || firstUpdateTime < (System.currentTimeMillis() - 5000))
-					{
-						
-						buildMenu();
-						updateUI();
-						updateCount = 0;
-						firstUpdateTime = System.currentTimeMillis();
-						
-					}
 					
-				} else {
-					buildMenu();
-					updateUI();
+					if (message == ControllerMessage.NEWDATASET) needsUIRebuild = true;
 				}
-				
+								
+				if (needsUIRebuild) buildMenu();
+				updateUI();
 				
 				
 			}
-
-
+			
+			@Override
+			public boolean flushQueueForMessage(ControllerMessage m)
+			{
+				//user interactions should not be delayed
+				return (m == ControllerMessage.NORMAL);
+			}
+			
+			
 			private void updateUI()
 			{
 				makeTitle();
 				repaint();
 
-				scaleSpinner.removeChangeListener(scaleChange);
-				scaleSpinner.setValue(controller.getScale());
-				scaleSpinner.addChangeListener(scaleChange);
+				scaleMaxSpinner.removeChangeListener(scaleChange);
+				scaleMaxSpinner.setValue(controller.getScale());
+				scaleMaxSpinner.addChangeListener(scaleChange);
 				
 				savePictureButton.setEnabled(controller.hasData());
 			}
 
+			
 		});
 
 
 	}
 
-
-	public JToolBar buildToolbar()
-	{
+	public JToolBar buildToolbar() {
 		JToolBar toolbar = new JToolBar();
 		toolbar.setFloatable(false);
 
-		ImageButton newWindow = new ToolbarImageButton(
-			StockIcon.WINDOW_NEW,
-			"New Window",
-			"Opens a new window to view data in",
-			false);
-		ImageButton openData = new ToolbarImageButton(
-			StockIcon.DOCUMENT_OPEN,
-			"Open Data",
-			"Opens a new data set for viewing",
-			false);
-		savePictureButton = new ToolbarImageButton(
-			StockIcon.DEVICE_CAMERA,
-			"Save Picture",
-			"Save the currently displayed data as a picture",
-			true);
+		ImageButton newWindow = new ToolbarImageButton(StockIcon.WINDOW_NEW,
+				"New Window", "Opens a new window to view data in", false);
+		ImageButton openData = new ToolbarImageButton(StockIcon.DOCUMENT_OPEN,
+				"Open Data", "Opens a new data set for viewing", false);
+		savePictureButton = new ToolbarImageButton(StockIcon.DEVICE_CAMERA,
+				"Save Picture",
+				"Save the currently displayed data as a picture", true);
 
 		newWindow.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				actionNewWindow();
 			}
 		});
 
 		savePictureButton.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				actionSavePicture();
 			}
 		});
 
 		openData.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				actionOpenData();
 			}
 		});
@@ -206,9 +181,7 @@ public class XRDMapViewer extends JPanel
 		return toolbar;
 	}
 
-
-	public JPanel buildStatusbar()
-	{
+	public JPanel buildStatusbar() {
 
 		JPanel statusbar = new JPanel();
 		statusbar.setLayout(new BorderLayout());
@@ -219,46 +192,40 @@ public class XRDMapViewer extends JPanel
 
 	}
 
-
-	public JPanel scaleControl()
-	{
+	public JPanel scaleControl() {
 		JPanel scale = new JPanel();
 		scale.setLayout(new BorderLayout());
 
 		JLabel scaleLabel = new JLabel("Scale ");
 		scale.add(scaleLabel, BorderLayout.WEST);
 
-		scaleSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1000.0, 0.1));
-		scale.add(scaleSpinner, BorderLayout.EAST);
+		scaleMaxSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 10000.0, 0.1));
+		scale.add(scaleMaxSpinner, BorderLayout.EAST);
 
 		scaleChange = new ChangeListener() {
 
-			public void stateChanged(ChangeEvent e)
-			{
+			public void stateChanged(ChangeEvent e) {
 
-				controller.setScale(((Double) scaleSpinner.getValue()).floatValue());
+				controller.setScale(((Double) scaleMaxSpinner.getValue()).floatValue());
 			}
 		};
 
-		scaleSpinner.addChangeListener(scaleChange);
+		scaleMaxSpinner.addChangeListener(scaleChange);
 
 		return scale;
 	}
 
-
-	private void buildMenu()
-	{
+	private void buildMenu() {
 		JMenuBar menubar = new JMenuBar();
 
 		final JMenu filemenu = new JMenu("File");
 		final JMenu mapsmenu = new JMenu("Maps");
 
-
-		JMenuItem newWindow = new JMenuItem("New Window", StockIcon.WINDOW_NEW.toMenuIcon());
+		JMenuItem newWindow = new JMenuItem("New Window",
+				StockIcon.WINDOW_NEW.toMenuIcon());
 		newWindow.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				actionNewWindow();
 			}
 		});
@@ -267,21 +234,21 @@ public class XRDMapViewer extends JPanel
 
 		filemenu.addSeparator();
 
-		JMenuItem open = new JMenuItem("Open Data...", StockIcon.DOCUMENT_OPEN.toMenuIcon());
+		JMenuItem open = new JMenuItem("Open Data...",
+				StockIcon.DOCUMENT_OPEN.toMenuIcon());
 		open.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				actionOpenData();
 			}
 		});
 		filemenu.add(open);
 
-		JMenuItem save = new JMenuItem("Save Picture", StockIcon.DEVICE_CAMERA.toMenuIcon());
+		JMenuItem save = new JMenuItem("Save Picture",
+				StockIcon.DEVICE_CAMERA.toMenuIcon());
 		save.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				actionSavePicture();
 			}
 		});
@@ -292,67 +259,57 @@ public class XRDMapViewer extends JPanel
 		JMenuItem close = new JMenuItem("Close Window");
 		close.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				container.close();
 			}
 		});
 		filemenu.add(close);
 
-		JMenuItem exit = new JMenuItem("Exit", StockIcon.WINDOW_CLOSE.toMenuIcon());
+		JMenuItem exit = new JMenuItem("Exit",
+				StockIcon.WINDOW_CLOSE.toMenuIcon());
 		exit.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
 				System.exit(0);
 			}
 		});
 		filemenu.add(exit);
 
-
 		menubar.add(filemenu);
 
+		if (controller.getModel() != null) {
 
-		if (controller.getModel() != null)
-		{
+			// get the maps as a list
+			FList<ProcessXRD_Map> maps = Fn.map(controller.getModel().maps,
+					Functions.<ProcessXRD_Map> id());
 
-			//get the maps as a list
-			FList<ProcessXRD_Map> maps = Fn.map(controller.getModel().maps, Functions
-				.<ProcessXRD_Map> id());
-
-			//sort the maps by string name field
+			// sort the maps by string name field
 			Fn.sortBy(maps,
 
-			//simple string comparitor
+			// simple string comparitor
 					new Comparator<String>() {
 
-						public int compare(String o1, String o2)
-					{
-						return o1.compareTo(o2);
-					}
+						public int compare(String o1, String o2) {
+							return o1.compareTo(o2);
+						}
 					},
 
-					//map the map to the map name
+					// map the map to the map name
 					new FnMap<ProcessXRD_Map, String>() {
 
-						public String f(ProcessXRD_Map map)
-					{
-						return map.name;
-					}
-					}
-				);
+						public String f(ProcessXRD_Map map) {
+							return map.name;
+						}
+					});
 
-
-			//for each map, create an entry in the menu
+			// for each map, create an entry in the menu
 			maps.each(new FnEach<ProcessXRD_Map>() {
 
-				public void f(final ProcessXRD_Map map)
-				{
+				public void f(final ProcessXRD_Map map) {
 					JMenuItem item = new JMenuItem(map.name);
 					item.addActionListener(new ActionListener() {
 
-						public void actionPerformed(ActionEvent e)
-						{
+						public void actionPerformed(ActionEvent e) {
 							controller.setMap(map);
 						}
 					});
@@ -368,59 +325,46 @@ public class XRDMapViewer extends JPanel
 		container.setJMenuBar(menubar);
 	}
 
-
-	private void makeTitle()
-	{
+	private void makeTitle() {
 		String title;
-		title = "XRD Crystal Viewer";
-		if (controller.getModel() != null)
-		{
-			title += ": " + controller.getModel().filePrefix;
+		title = ""; 
+		if (controller.getModel() != null) {
+			title += controller.getModel().projectName;
+			
+			if (controller.getMap() != null) {
+				title += ": " + controller.getMap().name;
+			}
+			
 		}
 
-		if (controller.getMap() != null)
-		{
-			title += " - " + controller.getMap().name;
-		}
+		
 
+		if (title.length() > 0) title += " - ";
+		title += "FOXMAS XRD Results Viewer";
+		
 		container.setTitle(title);
 
 	}
 
-
-
-
-
-
-
-
-
-
-	public void actionNewWindow()
-	{
+	public void actionNewWindow() {
 		new XRDMapFrame(controller.getModel());
 	}
 
-
-	public void actionSavePicture()
-	{
-		if (controller.getMap() != null) new SavePicture(container, targetPanel, "");
+	public void actionSavePicture() {
+		if (controller.getMap() != null)
+			new SavePicture(container, targetPanel, "");
 	}
 
-
-	public void actionOpenData()
-	{
+	public void actionOpenData() {
 		JFileChooser chooser = new JFileChooser(new File("."));
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		chooser.showOpenDialog(this);
 		File f = chooser.getSelectedFile();
 
-		if (f == null) return;
+		if (f == null)
+			return;
 		controller.loadData(f.getAbsolutePath());
 
-		//controller.loadData("/home/nathaniel/Projects/XRDStrainViewer/Gaussian");
 	}
-
-
 
 }

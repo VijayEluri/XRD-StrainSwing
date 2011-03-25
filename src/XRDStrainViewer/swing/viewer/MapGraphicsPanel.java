@@ -78,6 +78,7 @@ public class MapGraphicsPanel extends GraphicsPanel
 				palettes,
 				false,
 				map.name,
+				2,
 				true
 				);
 
