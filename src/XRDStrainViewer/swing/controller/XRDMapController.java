@@ -72,7 +72,7 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 	public void loadData(String folder)
 	{
 		//clear out the old model data from the folder monitor
-		if (model != null) FolderMonitorService.getFolderMonitor().removeProject(model.projectName);
+		if (model != null) FolderMonitorService.getFolderMonitor().removeProject(model);
 		
 		List<String> folders = new LinkedList<String>();
 		folders.add(folder);
