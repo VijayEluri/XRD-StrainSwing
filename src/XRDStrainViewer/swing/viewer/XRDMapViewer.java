@@ -5,13 +5,11 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.swing.Box;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -23,13 +21,14 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import commonenvironment.IOOperations;
+
 import XRDStrainViewer.swing.XRDMapFrame;
 import XRDStrainViewer.swing.controller.ControllerMessage;
 import XRDStrainViewer.swing.controller.XRDMapController;
 
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Map;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_ProjectData;
-import eventful.EventfulEnumListener;
+import ca.sciencestudio.process.xrd.datastructures.mapdata.ProjectData;
+import ca.sciencestudio.process.xrd.datastructures.mapdata.maps.XRDMap;
 import eventful.QueuedEventfulEnumListener;
 import fava.Fn;
 import fava.Functions;
@@ -39,7 +38,7 @@ import fava.signatures.FnMap;
 
 import scidraw.swing.GraphicsPanel;
 import scidraw.swing.SavePicture;
-import swidget.icons.IconFactory;
+import swidget.dialogues.AboutDialogue;
 import swidget.icons.StockIcon;
 import swidget.widgets.ImageButton;
 import swidget.widgets.ToolbarImageButton;
@@ -57,14 +56,15 @@ public class XRDMapViewer extends JPanel {
 	// updates
 	private JSpinner scaleMaxSpinner;
 	private ChangeListener scaleChange;
-
-	// widgets
+	
+		// widgets
 	private ImageButton savePictureButton;
-
-	public XRDMapViewer(ProcessXRD_ProjectData data, XRDMapFrame container) {
+	private JLabel statusLabel;
+	
+	public XRDMapViewer(ProjectData data, XRDMapFrame container) {
 		controller = new XRDMapController(data);
 		if (data != null) {
-			controller.setMap(controller.getModel().maps[0]);
+			controller.setMap(controller.getModel().maps.get(0));
 		}
 
 		this.container = container;
@@ -82,16 +82,15 @@ public class XRDMapViewer extends JPanel {
 
 		setLayout(new BorderLayout());
 
-
-		targetPanel = new MapGraphicsPanel(controller);
-
-
-		add(targetPanel, BorderLayout.CENTER);
-
+		
 		add(buildToolbar(), BorderLayout.NORTH);
 
 		add(buildStatusbar(), BorderLayout.SOUTH);
 
+		targetPanel = new MapGraphicsPanel(controller, statusLabel);
+		add(targetPanel, BorderLayout.CENTER);
+		
+		
 		buildMenu();
 
 		
@@ -174,10 +173,35 @@ public class XRDMapViewer extends JPanel {
 			}
 		});
 
+		
+		ImageButton about = new ToolbarImageButton(StockIcon.MISC_ABOUT, "About");
+		about.addActionListener(new ActionListener() {
+		
+			public void actionPerformed(ActionEvent e)
+			{
+				new AboutDialogue(
+						container,
+						"FOXMAS Offline Viewer",
+						"XRD Indexation Result Viewer",
+						"www.sciencestudioproject.com",
+						"Copyright (c) 2011 by<br>The University of Western Ontario<br>and<br>The Canadian Light Source Inc.",
+						IOOperations.readTextFromJar("/XRDStrainViewer/swing/licence.txt"),
+						IOOperations.readTextFromJar("/XRDStrainViewer/swing/credits.txt"),
+						"logo",
+						"",
+						"1.0",
+						"January 2012",
+						true
+				);
+			}
+		});
+		
 		toolbar.add(newWindow);
 		toolbar.add(openData);
 		toolbar.add(savePictureButton);
-
+		toolbar.add(Box.createHorizontalGlue());
+		toolbar.add(about);
+		
 		return toolbar;
 	}
 
@@ -188,6 +212,9 @@ public class XRDMapViewer extends JPanel {
 
 		statusbar.add(scaleControl(), BorderLayout.WEST);
 
+		statusLabel = new JLabel();
+		statusbar.add(statusLabel);
+		
 		return statusbar;
 
 	}
@@ -280,8 +307,8 @@ public class XRDMapViewer extends JPanel {
 		if (controller.getModel() != null) {
 
 			// get the maps as a list
-			FList<ProcessXRD_Map> maps = Fn.map(controller.getModel().maps,
-					Functions.<ProcessXRD_Map> id());
+			FList<XRDMap<?>> maps = Fn.map(controller.getModel().maps,
+					Functions.<XRDMap<?>> id());
 
 			// sort the maps by string name field
 			Fn.sortBy(maps,
@@ -295,17 +322,17 @@ public class XRDMapViewer extends JPanel {
 					},
 
 					// map the map to the map name
-					new FnMap<ProcessXRD_Map, String>() {
+					new FnMap<XRDMap<?>, String>() {
 
-						public String f(ProcessXRD_Map map) {
+						public String f(XRDMap<?> map) {
 							return map.name;
 						}
 					});
 
 			// for each map, create an entry in the menu
-			maps.each(new FnEach<ProcessXRD_Map>() {
+			maps.each(new FnEach<XRDMap<?>>() {
 
-				public void f(final ProcessXRD_Map map) {
+				public void f(final XRDMap<?> map) {
 					JMenuItem item = new JMenuItem(map.name);
 					item.addActionListener(new ActionListener() {
 

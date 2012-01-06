@@ -1,13 +1,18 @@
 package XRDStrainViewer.swing.viewer;
 
 import java.awt.Color;
-import java.util.ArrayList;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.LinkedList;
 import java.util.List;
 
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Map;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Pixel;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_StrainMap;
+import javax.swing.JLabel;
+
+import ca.sciencestudio.process.xrd.datastructures.mapdata.Pixel;
+import ca.sciencestudio.process.xrd.datastructures.mapdata.PixelData;
+import ca.sciencestudio.process.xrd.datastructures.mapdata.maps.StrainMap;
+import ca.sciencestudio.process.xrd.datastructures.mapdata.maps.XRDMap;
+import fava.functionable.FList;
 
 import XRDStrainViewer.swing.controller.XRDMapController;
 
@@ -21,6 +26,7 @@ import scidraw.drawing.map.palettes.AbstractPalette;
 import scidraw.drawing.map.palettes.ThermalScalePalette;
 import scidraw.drawing.painters.axis.AxisPainter;
 import scidraw.swing.GraphicsPanel;
+import scitypes.Bounds;
 import scitypes.Coord;
 
 
@@ -34,19 +40,58 @@ public class MapGraphicsPanel extends GraphicsPanel
 	
 	private XRDMapController 				controller;
 	
-	public MapGraphicsPanel(XRDMapController controller)
+	public MapGraphicsPanel(final XRDMapController controller, final JLabel status)
 	{
 		drawing = new MapDrawing(null, controller.dr);
 		painter = new RasterColorMapPainter();
 		drawing.setPainters(painter);
 		
 		this.controller = controller;
+		
+		this.addMouseListener(new MouseListener() {
+			
+			public void mouseReleased(MouseEvent e) {}
+			
+			public void mousePressed(MouseEvent e) {}
+			
+			public void mouseExited(MouseEvent e) {}
+			
+			public void mouseEntered(MouseEvent e) {}
+			
+			public void mouseClicked(MouseEvent e) {
+				int x = e.getX();
+				int y = e.getY();
+				
+				Coord<Integer> coord = drawing.getMapCoordinateAtPoint(x, y, true);
+				
+				if (coord == null || controller.getModel() == null){
+					status.setText("X: -, Y: -, Filename: -");
+					return;
+				}
+
+				
+				int datax, datay;
+				datay = coord.y; //controller.getModel().scanHeight - coord.y - 1;
+				datax = coord.x;
+				
+				PixelData pixel = controller.getModel().pixels.get(datax + datay * controller.getModel().scanWidth);
+				if (pixel == null) {
+					status.setText("X: -, Y: -, Filename: -");
+					return;
+				}
+				
+				String fn = pixel.sourceImage;
+				status.setText("X: " + datax + ", Y: " + datay + ", Filename: " + (fn == null ? "-" : fn));
+				
+			}
+		});
+		
 	}
 	
 	@Override
 	protected void drawGraphics(Surface backend, boolean vector)
 	{
-		ProcessXRD_Map map = controller.getMap();
+		XRDMap<?> map = controller.getMap();
 		DrawingRequest dr = controller.dr;
 		
 		if (!controller.hasData() || map == null) return;
@@ -54,8 +99,11 @@ public class MapGraphicsPanel extends GraphicsPanel
 		//set the drawing requests dimensions for the data and the screen
 		dr.imageWidth = getWidth();
 		dr.imageHeight = getHeight();
+		
 		dr.dataHeight = map.height;
 		dr.dataWidth = map.width;
+		dr.uninterpolatedHeight = map.height;
+		dr.uninterpolatedWidth = map.width;
 
 		//get a list of colors to draw on the map
 		List<Color> colors = getColorMapFromPixelMap(map, dr);
@@ -82,7 +130,7 @@ public class MapGraphicsPanel extends GraphicsPanel
 				true
 				);
 
-		if (controller.getMap() instanceof ProcessXRD_StrainMap) {
+		if (controller.getMap() instanceof StrainMap) {
 			drawing.setAxisPainters(axis);
 		} else {
 			drawing.clearAxisPainters();
@@ -112,9 +160,9 @@ public class MapGraphicsPanel extends GraphicsPanel
 		return drawing.calcTotalSize().x;
 	}
 
-	private List<Color> getColorMapFromPixelMap(ProcessXRD_Map map, DrawingRequest dr)
+	private List<Color> getColorMapFromPixelMap(XRDMap<?> map, DrawingRequest dr)
 	{
-		List<Color> colorMap = new ArrayList<Color>();
+		List<Color> colorMap = new FList<Color>();
 
 		for (int i = 0; i < map.height * map.width; i++)
 		{
@@ -123,15 +171,13 @@ public class MapGraphicsPanel extends GraphicsPanel
 
 		Color c;
 		
-		int maxInd = Math.min(map.dataIndex, map.height * map.width);
-
-		if (map instanceof ProcessXRD_StrainMap)
+		if (map instanceof StrainMap)
 		{
-			((ProcessXRD_StrainMap) map).setSpectrumRange(0, dr.maxYIntensity);
+			Bounds<Float> spectrumBounds = new Bounds<Float>(0f, dr.maxYIntensity);
 
-			for (int i = 0; i < maxInd; i++)
+			for (int i = 0; i < map.size(); i++)
 			{
-				ProcessXRD_Pixel pixel = map.getPixel(i);
+				Pixel pixel = map.getPixel(i, spectrumBounds);
 				if (pixel == null) continue;
 				int index = pixel.x + (pixel.y * map.width);
 				c = new Color(pixel.r, pixel.g, pixel.b);
@@ -141,9 +187,9 @@ public class MapGraphicsPanel extends GraphicsPanel
 		}
 		else
 		{
-			for (int i = 0; i < maxInd; i++)
+			for (int i = 0; i < map.size(); i++)
 			{
-				ProcessXRD_Pixel pixel = map.getPixel(i);
+				Pixel pixel = map.getPixel(i, null);
 				if (pixel == null) continue;
 				int index = pixel.x + (pixel.y * map.width);
 				c = new Color(pixel.r, pixel.g, pixel.b);

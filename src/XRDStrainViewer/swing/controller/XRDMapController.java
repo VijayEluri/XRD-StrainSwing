@@ -9,8 +9,8 @@ import XRDStrainViewer.swing.FolderMonitorService;
 import scidraw.drawing.DrawingRequest;
 import scidraw.drawing.common.Spectrums;
 
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_Map;
-import ca.sciencestudio.process.xrd.datastructures.ProcessXRD_ProjectData;
+import ca.sciencestudio.process.xrd.datastructures.mapdata.ProjectData;
+import ca.sciencestudio.process.xrd.datastructures.mapdata.maps.XRDMap;
 import ca.sciencestudio.process.xrd.monitor.FolderMonitor;
 import eventful.EventfulEnum;
 import eventful.EventfulTypeListener;
@@ -22,11 +22,11 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 
 
 	
-	private ProcessXRD_ProjectData	model;
-	private ProcessXRD_Map			map;
-	public DrawingRequest			dr;
+	private ProjectData				model;
+	private XRDMap<?>				map;
+	public  DrawingRequest			dr;
 	
-	public XRDMapController(ProcessXRD_ProjectData model)
+	public XRDMapController(ProjectData model)
 	{	
 		dr = new DrawingRequest();
 		dr.maxYIntensity = 1;
@@ -50,20 +50,20 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 	}
 	
 	
-	public void setMap(ProcessXRD_Map map)
+	public void setMap(XRDMap map)
 	{
 		this.map = map;
 		updateListeners(ControllerMessage.NEWMAP);
 	}
 	
 	
-	public ProcessXRD_Map getMap()
+	public XRDMap getMap()
 	{
 		return map;
 	}
 	
 	
-	public ProcessXRD_ProjectData getModel()
+	public ProjectData getModel()
 	{
 		return model;
 	}
@@ -83,10 +83,9 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 		
 
 		model = fm.requestProject(dir.getName(), dir.getParent(), false); 
-		model.setSpectrum(Spectrums.ThermalScale());	
 		
 		
-		map = model.maps[0];
+		map = model.maps.get(0);
 		
 		model.addListener(new EventfulTypeListener<String>() {
 
