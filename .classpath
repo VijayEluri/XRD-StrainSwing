@@ -2,10 +2,10 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/Process_XRD_Web_App/WebContent/WEB-INF/lib/plural.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Swidget"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SciTypes"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SciDraw"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Process_XRD_Core"/>
+	<classpathentry kind="lib" path="/Process_XRD_Web_App/WebContent/WEB-INF/lib/plural.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -7,7 +7,6 @@ import java.util.List;
 import XRDStrainViewer.swing.FolderMonitorService;
 
 import scidraw.drawing.DrawingRequest;
-import scidraw.drawing.common.Spectrums;
 
 import ca.sciencestudio.process.xrd.datastructures.mapdata.ProjectData;
 import ca.sciencestudio.process.xrd.datastructures.mapdata.maps.XRDMap;
@@ -50,14 +49,14 @@ public class XRDMapController extends EventfulEnum<ControllerMessage>
 	}
 	
 	
-	public void setMap(XRDMap map)
+	public void setMap(XRDMap<?> map)
 	{
 		this.map = map;
 		updateListeners(ControllerMessage.NEWMAP);
 	}
 	
 	
-	public XRDMap getMap()
+	public XRDMap<?> getMap()
 	{
 		return map;
 	}

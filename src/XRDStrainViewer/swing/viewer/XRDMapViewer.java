@@ -134,6 +134,12 @@ public class XRDMapViewer extends JPanel {
 				savePictureButton.setEnabled(controller.hasData());
 			}
 
+			@Override
+			public boolean skipQueue(ControllerMessage message)
+			{
+				return false;
+			}
+
 			
 		});
 
